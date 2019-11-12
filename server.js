@@ -1,22 +1,62 @@
-var express = require("express");
-var mongoose = require("mongoose");
+const express = require('express');
+const logger = require('morgan');
+const mongoose = require('mongoose');
+const exphbs = require('express-handlebars');
 
-var app = express();
-var PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(express.static("public"));
+const db = require('./models');
+
+const app = express();
+
+app.use(logger('dev'));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-require("./routes/enterData")(app);
+app.use(express.static('public'));
 
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/workouts', {
+  useNewUrlParser: true,
+});
 
+app.engine(
+  'handlebars',
+  exphbs({
+    defaultLayout: 'main',
+  }),
+);
+app.set('view engine', 'handlebars');
 
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/imageperformance", {
-  useNewUrlParser: true
+app.get('/', (req, res) => {
+  res.render('index');
 });
 
 
-app.listen(PORT, function() {
-  console.log(`Now listening on port: ${PORT}`);
+
+
+app.get('/lift', (req, res) => {
+  db.Lift.find({})
+    .then((dbLift) => {
+      res.render('lift', { lifts: dbLift });
+    })
+    .catch((err) => {
+      res.json(err);
+    });
+});
+
+
+
+app.post('/api/lift', ({ body }, res) => {
+  db.Lift.create(body)
+    .then((dbLift) => {
+      res.json(dbLiftt);
+    })
+    .catch((err) => {
+      res.json(err);
+    });
+});
+
+app.listen(PORT, () => {
+  console.log(`App running on port ${PORT}!`);
 });
